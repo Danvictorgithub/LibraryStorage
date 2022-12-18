@@ -33,7 +33,7 @@ exports.index = (req, res) => {
 };
 
 // Display list of all books.
-exports.book_list = (req, res) => {
+exports.book_list = (req, res, next) => {
   Book.find({},"title author")
     .sort({title: 1})
     .populate("author")
@@ -46,8 +46,35 @@ exports.book_list = (req, res) => {
 };
 
 // Display detail page for a specific book.
-exports.book_detail = (req, res) => {
-  res.send(`NOT IMPLEMENTED: Book detail: ${req.params.id}`);
+exports.book_detail = (req, res, next) => {
+  async.parallel(
+  {
+    book(callback) {
+      Book.findById(req.params.id)
+        .populate("author")
+        .populate("genre")
+        .exec(callback);
+    },
+    book_instance(callback) {
+      BookInstance.find({book: req.params.id})
+        .exec(callback);
+    }
+  },
+  (err, results) => {
+    if (err) {
+      return next(err);
+    }
+    if (results == null) {
+      const err = new Error("Book not Found");
+      err.status = 404;
+      return next(err);
+    }
+    res.render("book_detail",{
+      title: "Book Detail",
+      book: results.book,
+      book_instance: results.book_instance,
+    });
+  });
 };
 
 // Display book create form on GET.
