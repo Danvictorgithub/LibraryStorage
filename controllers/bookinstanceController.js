@@ -51,11 +51,16 @@ exports.bookinstance_create_get = (req, res,next) => {
 
 // Handle BookInstance create on POST.
 exports.bookinstance_create_post = [
-  body(),
-  body(),
-  body(),
-  body(),
-  (req,res,next) => {
+  body("book", "Book must be specified").trim().isLength({ min: 1 }).escape(),
+  body("imprint", "Imprint must be specified")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  body("status").escape(),
+  body("due_back", "Invalid date")
+    .optional({ checkFalsy: true })
+    .isISO8601()
+    .toDate(),  (req,res,next) => {
     const errors = validationResult(req);
     const bookinstance = new BookInstance({
       book: req.body.book,
