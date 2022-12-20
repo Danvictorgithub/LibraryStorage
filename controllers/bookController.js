@@ -3,6 +3,9 @@ const Author = require("../models/author");
 const Genre = require("../models/genre");
 const BookInstance = require("../models/bookinstance");
 
+const {body, validationResult} = require("express-validator");
+
+
 const async = require("async");
 exports.index = (req, res) => {
   async.parallel(
@@ -78,9 +81,30 @@ exports.book_detail = (req, res, next) => {
 };
 
 // Display book create form on GET.
-exports.book_create_get = (req, res) => {
-  res.send("NOT IMPLEMENTED: Book create GET");
+exports.book_create_get = (req, res, next) => {
+  // Get all authors and genres, which we can use for adding to our book.
+  async.parallel(
+    {
+      authors(callback) {
+        Author.find(callback);
+      },
+      genres(callback) {
+        Genre.find(callback);
+      },
+    },
+    (err, results) => {
+      if (err) {
+        return next(err);
+      }
+      res.render("book_form", {
+        title: "Create Book",
+        authors: results.authors,
+        genres: results.genres,
+      });
+    }
+  );
 };
+
 
 // Handle book create on POST.
 exports.book_create_post = (req, res) => {
