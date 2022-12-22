@@ -222,7 +222,12 @@ exports.book_delete_post = (req, res, next) => {
         return next(err);
       }
       if (results.book_instances.length > 0) {
-        res.redirect("/catalog/books");
+        res.render("book_detail", {
+        title: results.book.title,
+        book: results.book,
+        book_instances: results.book_instance,
+      });
+        return;
       }
       Book.findByIdAndRemove(req.body.bookid,(err)=> {
         if (err) {
