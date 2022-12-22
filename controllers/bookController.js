@@ -156,7 +156,7 @@ exports.book_create_post = [
           }
           for (const genre of results.genres) {
             if (book.genre.includes(genre.id)) {
-              genre_checked = "true"; //jshint ignore:line
+              genre.checked = "true";
             }
           }
           res.render("book_form", {
@@ -181,13 +181,56 @@ exports.book_create_post = [
 ];
 
 // Display book delete form on GET.
-exports.book_delete_get = (req, res) => {
-  res.send("NOT IMPLEMENTED: Book delete GET");
+exports.book_delete_get = (req, res, next) => {
+  async.parallel(
+    {
+      book(callback) {
+        Book.findById(req.params.id).exec(callback);
+      },
+      book_instances(callback) {
+        BookInstance.find({book:req.params.id}).exec(callback);
+      }
+    },
+    (err,results) => {
+      if (err) {
+        return next(err);
+      }
+      if (results.book == null) {
+        res.redirect("/catalog/books");
+      }
+      res.render("book_delete", {
+        title: results.book.title,
+        book:results.book,
+        book_instances:results.book_instances,
+      });
+    });
 };
 
 // Handle book delete on POST.
-exports.book_delete_post = (req, res) => {
-  res.send("NOT IMPLEMENTED: Book delete POST");
+exports.book_delete_post = (req, res, next) => {
+  async.parallel(
+    {
+      book(callback){
+        Book.findById(req.body.bookid).exec(callback);
+      },
+      book_instances(callback) {
+        BookInstance.find({book:req.body.bookid}).exec(callback);
+      }
+    },
+    (err,results)=> {
+      if (err) {
+        return next(err);
+      }
+      if (results.book_instances.length > 0) {
+        res.redirect("/catalog/books");
+      }
+      Book.findByIdAndRemove(req.body.bookid,(err)=> {
+        if (err) {
+          return next(err);
+        }
+        res.redirect("/catalog/books");
+      });
+    });
 };
 
 // Display book update form on GET.
@@ -221,7 +264,7 @@ exports.book_update_get = (req, res, next) => {
           if (genre._id.toString() === bookGenre._id.toString()) {
             genre.checked = "true";
           }
-        }
+        } 
       }
       res.render("book_form", {
         title: "Update Book",
@@ -280,7 +323,7 @@ exports.book_update_post = [
           }
           for (const genre of results.genres) {
             if (book.genre.includes(genre.id)) {
-              genre_checked = "true"; //jshint ignore:line
+              genre.checked = "true"; 
             }
           }
           res.render("book_form", {
